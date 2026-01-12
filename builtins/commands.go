@@ -6,6 +6,7 @@ type Command map[string]func(args []string) error
 
 var Commands = Command{
 	"exit": Exit,
+	"echo": Echo,
 }
 
 func FindCommand(name string) (func(args []string) error, error) {
