@@ -19,6 +19,7 @@ func InitCommands() Command {
 		"echo": Echo,
 		"type": Type,
 		"pwd":  Pwd,
+		"cd":   Cd,
 	}
 
 	return Commands
