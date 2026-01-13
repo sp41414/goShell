@@ -3,6 +3,8 @@ package builtins
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -49,4 +51,40 @@ func ParsePath() ([]string, error) {
 	}
 
 	return splitPath, nil
+}
+
+func FindExecutable(paths []string, executable string) (string, bool) {
+	for _, path := range paths {
+		if path == "" {
+			continue
+		}
+		fullPath := filepath.Join(path, executable)
+
+		// Checks if path exists, is a regular file, has executable permissions.
+		if fi, err := os.Stat(fullPath); err == nil && fi.Mode().IsRegular() && fi.Mode().Perm()&0111 != 0 {
+			return fullPath, true
+		}
+	}
+	return "", false
+}
+
+func Execute(file string, args []string) error {
+	path, err := ParsePath()
+	if err != nil {
+		return err
+	}
+
+	var cmd *exec.Cmd
+	if fullPath, ok := FindExecutable(path, file); ok {
+		cmd = exec.Command(fullPath, args...)
+		// Override the first arg (program name) with the actual file name instead of
+		// the full path.
+		cmd.Args[0] = file
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	}
+
+	return fmt.Errorf("%s: command not found", file)
 }

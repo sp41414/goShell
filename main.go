@@ -26,7 +26,10 @@ func main() {
 
 		callback, err := builtins.FindCommandCallback(args[0], commands)
 		if err != nil {
-			fmt.Print(err)
+			execErr := builtins.Execute(args[0], args[1:])
+			if execErr != nil {
+				fmt.Println(execErr)
+			}
 			continue
 		}
 
