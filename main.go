@@ -11,6 +11,8 @@ import (
 )
 
 func main() {
+	commands := builtins.InitCommands()
+
 	for {
 		fmt.Print("$ ")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
@@ -22,11 +24,15 @@ func main() {
 			continue
 		}
 
-		callback, err := builtins.FindCommand(args[0])
+		callback, err := builtins.FindCommandCallback(args[0], commands)
 		if err != nil {
 			fmt.Print(err)
 			continue
 		}
-		callback(args[1:])
+
+		err = callback(args[1:])
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
