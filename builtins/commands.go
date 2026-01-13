@@ -73,18 +73,27 @@ func Execute(file string, args []string) error {
 	if err != nil {
 		return err
 	}
+	fullPath, found := FindExecutable(path, file)
 
-	var cmd *exec.Cmd
-	if fullPath, ok := FindExecutable(path, file); ok {
-		cmd = exec.Command(fullPath, args...)
-		// Override the first arg (program name) with the actual file name instead of
-		// the full path.
-		cmd.Args[0] = file
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		return cmd.Run()
+	if !found {
+		if fi, err := os.Stat(file); err == nil && fi.Mode().IsRegular() && fi.Mode().Perm()&0111 != 0 {
+			if !strings.ContainsRune(file, filepath.Separator) {
+				fullPath = "./" + file
+			} else {
+				fullPath = file
+			}
+			found = true
+		}
 	}
 
-	return fmt.Errorf("%s: command not found", file)
+	if !found {
+		return fmt.Errorf("%s: command not found", file)
+	}
+
+	cmd := exec.Command(fullPath, args...)
+	cmd.Args[0] = file
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
