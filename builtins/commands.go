@@ -1,6 +1,11 @@
 package builtins
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"runtime"
+	"strings"
+)
 
 type Command map[string]func(args []string) error
 
@@ -28,4 +33,20 @@ func FindCommand(name string, commands Command) bool {
 		return true
 	}
 	return false
+}
+
+func ParsePath() ([]string, error) {
+	path, found := os.LookupEnv("PATH")
+	if !found {
+		return []string{}, fmt.Errorf("PATH environment variable not found\n")
+	}
+
+	var splitPath []string
+	if runtime.GOOS == "windows" {
+		splitPath = strings.Split(path, ";")
+	} else {
+		splitPath = strings.Split(path, ":")
+	}
+
+	return splitPath, nil
 }
