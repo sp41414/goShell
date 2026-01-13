@@ -18,6 +18,7 @@ func InitCommands() Command {
 		"exit": Exit,
 		"echo": Echo,
 		"type": Type,
+		"pwd":  Pwd,
 	}
 
 	return Commands
