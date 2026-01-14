@@ -19,7 +19,8 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error: could not read command %v", err)
 		}
-		args := strings.Fields(command)
+		command = strings.TrimSpace(command)
+		args := parseArgs(command)
 		if len(args) <= 0 {
 			continue
 		}
