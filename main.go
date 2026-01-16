@@ -25,6 +25,29 @@ func main() {
 			continue
 		}
 
+		args, stdoutFile, stderrFile, appendOut, appendErr := parseRedirect(args)
+
+		if stdoutFile != "" {
+			flags := os.O_WRONLY | os.O_CREATE
+			if appendOut {
+				flags |= os.O_APPEND
+			} else {
+				flags |= os.O_TRUNC
+			}
+			f, _ := os.OpenFile(stdoutFile, flags, 0644)
+			os.Stdout = f
+		}
+		if stderrFile != "" {
+			flags := os.O_WRONLY | os.O_CREATE
+			if appendErr {
+				flags |= os.O_APPEND
+			} else {
+				flags |= os.O_TRUNC
+			}
+			f, _ := os.OpenFile(stderrFile, flags, 0644)
+			os.Stderr = f
+		}
+
 		callback, err := builtins.FindCommandCallback(args[0], commands)
 		if err != nil {
 			execErr := builtins.Execute(args[0], args[1:])
@@ -38,5 +61,8 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
+
+		os.Stdout = os.NewFile(1, "/dev/stdout")
+		os.Stderr = os.NewFile(2, "/dev/stderr")
 	}
 }

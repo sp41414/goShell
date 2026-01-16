@@ -97,5 +97,13 @@ func Execute(file string, args []string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+
+	err = cmd.Run()
+	if err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			return nil
+		}
+		return err
+	}
+	return nil
 }

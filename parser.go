@@ -50,3 +50,26 @@ func parseArgs(input string) []string {
 
 	return result
 }
+
+func parseRedirect(args []string) (cleanedArgs []string, stdout string, stderr string, appendOut, appendErr bool) {
+	for i := 0; i < len(args); i++ {
+		switch {
+		case (args[i] == ">" || args[i] == "1>") && i+1 < len(args):
+			stdout, appendOut = args[i+1], false
+			i++
+		case args[i] == "2>" && i+1 < len(args):
+			stderr, appendErr = args[i+1], false
+			i++
+		case (args[i] == ">>" || args[i] == "1>>") && i+1 < len(args):
+			stdout, appendOut = args[i+1], true
+			i++
+		case args[i] == "2>>" && i+1 < len(args):
+			stderr, appendErr = args[i+1], true
+			i++
+		default:
+			cleanedArgs = append(cleanedArgs, args[i])
+		}
+	}
+
+	return
+}
