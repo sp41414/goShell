@@ -13,8 +13,11 @@ import (
 func main() {
 	commands := builtins.InitCommands()
 
+	orgStdout := os.Stdout
+	orgStderr := os.Stderr
+
 	for {
-		fmt.Print("$ ")
+		fmt.Fprintf(orgStdout, "$ ")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			log.Fatalf("Error: could not read command %v", err)
@@ -27,6 +30,9 @@ func main() {
 
 		args, stdoutFile, stderrFile, appendOut, appendErr := parseRedirect(args)
 
+		var stdoutFileCurr *os.File
+		var stderrFileCurr *os.File
+
 		if stdoutFile != "" {
 			flags := os.O_WRONLY | os.O_CREATE
 			if appendOut {
@@ -34,9 +40,15 @@ func main() {
 			} else {
 				flags |= os.O_TRUNC
 			}
-			f, _ := os.OpenFile(stdoutFile, flags, 0644)
+			f, err := os.OpenFile(stdoutFile, flags, 0644)
+			if err != nil {
+				fmt.Fprintln(orgStderr, err)
+				continue
+			}
 			os.Stdout = f
+			stdoutFileCurr = f
 		}
+
 		if stderrFile != "" {
 			flags := os.O_WRONLY | os.O_CREATE
 			if appendErr {
@@ -44,8 +56,13 @@ func main() {
 			} else {
 				flags |= os.O_TRUNC
 			}
-			f, _ := os.OpenFile(stderrFile, flags, 0644)
+			f, err := os.OpenFile(stderrFile, flags, 0644)
+			if err != nil {
+				fmt.Fprintln(orgStderr, err)
+				continue
+			}
 			os.Stderr = f
+			stderrFileCurr = f
 		}
 
 		callback, err := builtins.FindCommandCallback(args[0], commands)
@@ -54,7 +71,7 @@ func main() {
 			if execErr != nil {
 				fmt.Println(execErr)
 			}
-			continue
+			goto cleanup
 		}
 
 		err = callback(args[1:])
@@ -62,7 +79,16 @@ func main() {
 			fmt.Println(err)
 		}
 
-		os.Stdout = os.NewFile(1, "/dev/stdout")
-		os.Stderr = os.NewFile(2, "/dev/stderr")
+	cleanup:
+		if stdoutFileCurr != nil {
+			stdoutFileCurr.Sync()
+			stdoutFileCurr.Close()
+		}
+		if stderrFileCurr != nil {
+			stderrFileCurr.Sync()
+			stderrFileCurr.Close()
+		}
+		os.Stdout = orgStdout
+		os.Stderr = orgStderr
 	}
 }
